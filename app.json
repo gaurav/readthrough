@@ -1,0 +1,6 @@
+{
+  "name": "Readthrough",
+  "description": "A tool for managing long reading lists",
+  "repository": "https://github.com/gaurav/readthrough",
+  "image": "heroku/nodejs"
+}
