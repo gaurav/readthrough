@@ -1,5 +1,5 @@
 {
-  "name": "ReadThrough",
+  "name": "Readthrough",
   "version": "0.0.1",
   "description": "Tools for reading through large reading lists",
   "main": "main.js",
@@ -8,7 +8,10 @@
   },
   "dependencies": {
     "ejs": "2.3.3",
-    "express": "4.13.3"
+    "express": "4.13.3",
+    "express-session": "1.12.1",
+    "connect-mongo": "1.1.0",
+    "mongoose": "4.3.4"
   },
   "engines": {
     "node": "0.12.7"

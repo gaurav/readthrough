@@ -1,0 +1,28 @@
+<% include ../partials/top.ejs %>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Readthrough <small style="font-size: 50%">Get through your readings</small></h1>
+
+        <p><a href="http://github.com/gaurav/readthrough">Readthrough</a> is an open source tool 
+        to help you get through a long reading list.
+        </p>
+        
+        <p><strong>Information we store.</strong> We will never store usernames
+        and passwords. We store your e-mail address on a <a href="https://mongolab.com/databases/readthrough">hosted MongoLabs instance</a>.
+        At the moment, we only support reading lists from <a href="https://getpocket.com">Pocket</a>; if you log in with your
+        Pocket account, we store your Pocket access token. We do not keep backups of our database; you can delete your e-mail
+        address and/or Pocket access token at any point.
+        </p>
+
+        <center>
+            <p>You may <a href="/login/pocket">login using Pocket</a>.</p>
+        </center>
+
+        <p><strong>Problems?</strong> Please <a href="https://github.com/gaurav/readthrough/issues">look through reported issues</a>
+        or <a href="https://github.com/gaurav/readthrough/issues/new">file a new issue</a>. 
+        </p>
+    </div>
+</div>
+
+<% include ../partials/bottom.ejs %>
