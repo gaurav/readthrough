@@ -13,6 +13,7 @@
     "connect-mongo": "1.1.0",
     "mongoose": "4.3.4",
     "passport-pocket": "1.0.0",
+    "passport": "0.3.2",
     "dotenv": "1.2"
   },
   "engines": {
