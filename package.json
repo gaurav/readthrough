@@ -17,7 +17,7 @@
     "dotenv": "1.2"
   },
   "engines": {
-    "node": "0.12.7"
+    "node": "5.0"
   },
   "repository": {
     "type": "git",

@@ -1,3 +1,3 @@
 
-web: node --harmony main.js
+web: node main.js
 reload: nodemon main.js
