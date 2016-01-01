@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Tools for reading through large reading lists",
   "main": "main.js",
+  "engines": {
+    "node": "5.1"
+  }, 
   "scripts": {
     "start": "node main.js"
   },
@@ -16,10 +19,7 @@
     "passport": "0.3.2",
     "dotenv": "1.2"
   },
-  "engines": {
-    "node": "5.0"
-  },
-  "repository": {
+ "repository": {
     "type": "git",
     "url": "https://github.com/gaurav/readthrough"
   },
