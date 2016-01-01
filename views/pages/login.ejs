@@ -4,6 +4,17 @@
     <div class="container">
         <h1>Readthrough <small style="font-size: 50%">Get through your readings</small></h1>
 
+        <% if(error) { %>
+            <div class="alert alert-warning" role="alert">
+                <p><strong>Error</strong>: 
+                    <% if(error == 'no_consumer_key') { %>
+                        Configuration incomplete. Please set up with the Pocket authentication key.
+                    <% } else { %> 
+                        Unknown error.
+                    <% }%>
+            </div>
+        <% } %>
+
         <p><a href="http://github.com/gaurav/readthrough">Readthrough</a> is an open source tool 
         to help you get through a long reading list.
         </p>
@@ -15,9 +26,7 @@
         address and/or Pocket access token at any point.
         </p>
 
-        <center>
-            <p>You may <a href="/login/pocket">login using Pocket</a>.</p>
-        </center>
+        <p><strong>Ready to start?</strong> You may <strong><a href="/login/pocket">login using Pocket</a></strong>. Login using other sources may be developed later.</p>
 
         <p><strong>Problems?</strong> Please <a href="https://github.com/gaurav/readthrough/issues">look through reported issues</a>
         or <a href="https://github.com/gaurav/readthrough/issues/new">file a new issue</a>. 
