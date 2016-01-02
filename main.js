@@ -78,7 +78,7 @@ passport.deserializeUser(function(uuid, done) {
 
 var pocketStrategy = new PocketStrategy({
     consumerKey:    process.env.POCKET_CONSUMER_KEY,
-    callbackURL:    "http://" + process.env.HOSTNAME + ":" + app.get('port') + "/login/pocket/callback",
+    callbackURL:    "http://" + process.env.HOSTNAME + "/login/pocket/callback",
 }, function(username, accessToken, done) {
     process.nextTick(function() {
         return done(null, {
