@@ -29,6 +29,28 @@
                     <% } %>
                 </tbody>
             </table>
+
+            <h2>Active tasks (<%= tasks.count() || 0 %>)</h2>
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <td>Task</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% var count = 0; tasks.find().forEach(function(task) { count++; %>
+                        <tr>
+                            <td><pre><%= task %></pre>
+                            </td>
+                        </tr>
+                    <% }); %>
+                    <% if(count == 0) { %>
+                        <tr><td>
+                            <em>No tasks found.</em>
+                        </td></tr>
+                    <% } %>
+                </tbody>
+            </table>    
         </div>
     </div>
 </div>

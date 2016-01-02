@@ -1,7 +1,12 @@
-// Load some libraries.
+// Load NodeJS libraries.
 var http = require('http');
 var https = require('https');
 var os = require('os');
+
+// Load other libraries.
+var mongo = require('mongojs');
+var monq = require('monq');
+var uuidlib = require('node-uuid');
 
 // Set up .env so we have the same environment as heroku.
 require('dotenv').load();
@@ -23,8 +28,8 @@ const passport = require('passport');
 const PocketStrategy = require('passport-pocket');
 
 // Set up database connection with MongoDB.
-const mongoose = require('mongoose');
-mongoose.connect(process.env.MONGODB_URI);
+var monqclient = monq(process.env.MONGODB_URI);
+var mongo = monqclient.db;
 
 // Set up sessions.
 const session = require('express-session');
@@ -34,7 +39,7 @@ app.use(session({
     secret: '--cookie--secret--',
     resave: false, // I think?
     saveUninitialized: false, // maybe?
-    store: new MongoStore({ mongooseConnection: mongoose.connection })
+    store: new MongoStore({ db: mongo })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -44,14 +49,31 @@ if(!process.env.POCKET_CONSUMER_KEY) {
     throw new Error("No POCKET_CONSUMER_KEY specified!");
 }
 
-// Passport Set serializers
+// Passport serializers
+
+// Passports are stored in the 'User' table, so we need a model for that.
+users = mongo.collection('users');
+
 passport.serializeUser(function(user, done) {
-    user['displayName'] = user['username'];
-    done(null, user);
+    users.findOne({accessToken: user.accessToken}, function(err, obj) {
+        if(obj != null) {
+            done(err, obj.uuid);
+        } else {
+            user.uuid = uuidlib.v1();
+            users.insert(user);
+            done(null, user.uuid);
+        }
+    });
+
 });
 
-passport.deserializeUser(function(obj, done) {
-    done(null, obj);
+passport.deserializeUser(function(uuid, done) {
+    // Create or insert a new user with this accessToken.
+    users.findOne({
+        uuid: uuid
+    }, function(err, user) {
+        done(err, user);
+    });
 });
 
 var pocketStrategy = new PocketStrategy({
@@ -60,7 +82,7 @@ var pocketStrategy = new PocketStrategy({
 }, function(username, accessToken, done) {
     process.nextTick(function() {
         return done(null, {
-            username: username,
+            displayName: username,
             accessToken: accessToken
         });
     });
@@ -74,6 +96,13 @@ app.get('/login/pocket', passport.authenticate('pocket'), function(req, res) {
 });
 app.get('/login/pocket/callback', passport.authenticate('pocket', { failureRedirect: '/login' }),
 function(req, res) {
+    var user = req.user;
+    var tasks = monqclient.queue(user.accessToken);
+
+    tasks.enqueue('sync', {}, function(err, job) {
+        console.log('enqueued: ', job.data);
+    });
+
     res.redirect('/');
 });
 
@@ -107,9 +136,13 @@ app.get('/', function(req, res) {
     user = get_user_or_redirect(req, res);
     if(!user) return;
 
+    var queue = monqclient.queue(user.displayName);
+    var tasks = queue.collection;
+
     res.render('pages/index', {
         page_title: null,
-        user: user
+        user: user,
+        tasks: tasks
     });
 });
 
