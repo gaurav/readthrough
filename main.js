@@ -340,8 +340,8 @@ app.get('/atom/:uuid/items',
         var offset = parseInt(req.query.offset) || 0;
         var count = parseInt(req.query.count) || 100;
 
-        items.find({}).sort({'pocket.time_updated': -1}).skip(offset).limit(count, function(err, resulting_items) {
-            items.find({}).count(function(inner_err, total_count) {
+        items.find({'pocket.status':'0'}).sort({'pocket.time_updated': -1}).skip(offset).limit(count, function(err, resulting_items) {
+            items.find({'pocket.status':'0'}).count(function(inner_err, total_count) {
                 req.title = "All items (from " + offset + " to " + (offset + count) + ")";
                 req.items = resulting_items;
                 req.offset = offset;
