@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+    <title>Readthrough: <%= page_title %></title>
+    <link href="<%= feed_url %>" />
+    <updated><%= updated %></updated>
+    <author>
+        <name>Readthrough</name>
+    </author>
+    <id><%= feed_url %></id>
+
+    <% items.forEach(function(item) { %>
+        <entry>
+            <title><%= item.title || "(unknown)" %></title>
+            <link href="<%= item.meta_url %>" />
+            <id><%= item.meta_url.toLowerCase() %></id>
+            <summary><%= item.excerpt %></summary>
+        </entry>
+    <% }); %>
+
+</feed>

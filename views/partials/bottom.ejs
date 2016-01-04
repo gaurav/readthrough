@@ -1,4 +1,31 @@
 <!-- bottom template begins -->
 
+    <nav class="navbar navbar-default navbar-fixed-bottom">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <div id="task_status" class="navbar-brand">No tasks remaining.</div>
+            </div>
+        </div>
+    </nav>
+
+    <script type="text/javascript"><!--
+        TICK = 5000; // 5 seconds
+
+        function tick() {
+            $.getJSON('/tick', function(data, textStatus, jqXHR) {
+                var count = data.tasks.length;
+                if(count == 0)
+                    $('#task_status').text("No tasks remaining.");
+                else
+                    $('#task_status').text(data.tasks.length + " tasks remaining.");
+            });
+            window.setTimeout(tick, TICK);
+        }
+
+        $(document).ready(function() {
+            tick();
+        });
+    //--></script>
+
 </body>
 </html>

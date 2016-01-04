@@ -1,0 +1,52 @@
+<% include ../partials/top.ejs %>
+
+<div class="container-fluid" style="padding-top: 50px; padding-bottom: 70px;">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li><a href="/">Account details</a></li>
+            </ul>
+            <ul id="tags" class="nav nav-sidebar">
+                <li class="active"><a href="/items">All items <span class="sr-only">(current)</span></a></li>
+            </ul>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header"><%= page_title %></h1>
+
+            <a href="/atom/<%= user.uuid %>/items?offset=<%= offset %>&count=<%= count %>">Atom feed</a>
+
+            <center>
+                <a href="?offset=0&count=<%= count %>">|&lt;</a> | 
+                <a href="?offset=<%= offset - count %>&count=<%= count %>">&lt;&lt;</a> | 
+                <a href="?offset=<%= offset + count %>&count=<%= count %>">&gt;&gt;</a> |
+                <a href="?offset=<%= total_count - count %>&count=<%= count %>">&gt;|</a>
+            </center>
+
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <td>Article</td>
+                        <td>Excerpt</td>
+                        <td>Word count</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% items.forEach(function(item) { %>
+                        <tr>
+                            <td><a target="_new" href="<%= item.meta_url %>"><%= item.title || "(unknown)" %></a></td>
+                            <td><%= item.excerpt %></td>
+                            <td><%= item.size %></td>
+                        </tr>
+                    <% }); %>
+                    <% if(items.length == 0) { %>
+                        <tr><td colspan="4">
+                            <em>No items found.</em>
+                        </td></tr>
+                    <% } %>
+                </tbody>
+            </table>    
+        </div>
+    </div>
+</div>
+
+<% include ../partials/bottom.ejs %>
