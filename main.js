@@ -57,21 +57,27 @@ users = mongo.collection('users');
 passport.serializeUser(function(user, done) {
     users.findOne({accessToken: user.accessToken}, function(err, obj) {
         if(obj != null) {
+            // Load an existing user.
             done(err, obj.uuid);
         } else {
+            // Create a new user.
             user.uuid = uuidlib.v1();
             users.insert(user);
             done(null, user.uuid);
         }
     });
-
 });
 
 passport.deserializeUser(function(uuid, done) {
-    // Create or insert a new user with this accessToken.
+    // Create or insert a new user with this UUID.
     users.findOne({
         uuid: uuid
     }, function(err, user) {
+        // If we have to look up this user, let's also
+        // queue up a 'sync' call.
+        var tasks = monqclient.queue(uuid);
+        tasks.enqueue('sync', {}, {});
+
         done(err, user);
     });
 });
@@ -96,13 +102,6 @@ app.get('/login/pocket', passport.authenticate('pocket'), function(req, res) {
 });
 app.get('/login/pocket/callback', passport.authenticate('pocket', { failureRedirect: '/login' }),
 function(req, res) {
-    var user = req.user;
-    var tasks = monqclient.queue(user.accessToken);
-
-    tasks.enqueue('sync', {}, function(err, job) {
-        console.log('enqueued: ', job.data);
-    });
-
     res.redirect('/');
 });
 
@@ -132,19 +131,19 @@ function get_user_or_redirect(req, res) {
     return false;
 }
 
-app.get('/', function(req, res) {
-    user = get_user_or_redirect(req, res);
-    if(!user) return;
-
-    var queue = monqclient.queue(user.displayName);
-    var tasks = queue.collection;
-
-    res.render('pages/index', {
-        page_title: null,
-        user: user,
-        tasks: tasks
-    });
-});
+app.get('/', 
+    passport.authenticate('pocket', { failureRedirect: '/login' }),
+    function(req, res) {
+        var queue = monqclient.queue(req.user.uuid);
+        queue.collection.find({queue: req.user.uuid}, function(err, tasks) {
+            res.render('pages/index', {
+                page_title: null,
+                user: req.user,
+                tasks: tasks
+            });
+        });
+    }
+);
 
 app.listen(app.get('port'), function() {
     console.log('Node app is running on port', app.get('port'));
