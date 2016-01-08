@@ -164,11 +164,14 @@ app.get('/',
 function process_job_from_queue(err, job) {
     console.log("process_job_from_queue(" + err + ", " + job + ")");
 
+    // If both err and job are null, this means we're stuck with a dequeued
+    // job on the queue. Let's clear the queue.
+    
+
     if(err) console.log("Error in process_job_from_queue: " + err);
     if(!job) return;
 
     // console.log(job);
-
     var queue = monqclient.queue(job.data.queue);
 
     var accessToken = job.data.params.accessToken;
@@ -255,22 +258,34 @@ function process_job_from_queue(err, job) {
     }
 }
 
+// At every 'tick()', the queue does a job and moves on.
+function tick(queue) {
+    // Start a worker to execute exactly one task.
+    queue.dequeue(process_job_from_queue);
+
+    // Remove all completed jobs.
+    queue.collection.remove({status: 'complete'});
+
+    // Remove one dequeued job (hopefully the one we just dequeued).
+    queue.collection.remove({status: 'dequeued'}, {
+        justOne: true
+    });
+}
+
 app.get('/tick',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
     function(req, res) {
         var queue = monqclient.queue(req.user.uuid);
         queue.collection.find({queue: req.user.uuid}, function(err, tasks) {
-            // Start a worker to execute exactly one task.
-            queue.dequeue(process_job_from_queue);
-
-            // Remove all completed jobs.
-            queue.collection.remove({status: 'complete'});
+            tick(queue);
 
             // If and only if the queue is empty, add a 'sync' job onto it.
             if(tasks.length == 0) {
                 queue.enqueue('sync', {
                     accessToken: req.user.accessToken
-                }, {});
+                }, {
+                    delay: 1000    
+                });
             }
 
             res.status(200).json({
@@ -309,8 +324,6 @@ function results_to_atom(req, res) {
     });
 }
 
-
-
 // Display items.
 app.get('/items',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
@@ -339,6 +352,8 @@ app.get('/atom/:uuid/items',
     function(req, res, next) {
         var offset = parseInt(req.query.offset) || 0;
         var count = parseInt(req.query.count) || 100;
+
+        var queue = monqclient.queue(req.params.uuid);
 
         items.find({'pocket.status':'0'}).sort({'pocket.time_updated': -1}).skip(offset).limit(count, function(err, resulting_items) {
             items.find({'pocket.status':'0'}).count(function(inner_err, total_count) {
