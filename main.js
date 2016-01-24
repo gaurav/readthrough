@@ -234,10 +234,10 @@ function process_job_from_queue(err, job) {
                                     'size': item.word_count,
                                     'category': item.tags,
                                     'status': (item.status == '0' ? 'active' : (item.status == '1' ? 'archived' : 'deleted')),
-                                    'date_added': new Date(item.time_added),
-                                    'date_updated': new Date(item.time_updated),
-                                    'date_read': new Date(item.time_read),
-                                    'date_favorited': new Date(item.time_favorited)
+                                    'date_added': new Date(item.time_added * 1000), // Seconds since UTC -> Javascript milliseconds since UTC
+                                    'date_updated': new Date(item.time_updated * 1000),
+                                    'date_read': new Date(item.time_read * 1000),
+                                    'date_favorited': new Date(item.time_favorited * 1000)
                                 },
                                 {
                                     upsert: true
@@ -375,6 +375,12 @@ app.get('/items',
 
 // Display items as an Atom feed.
 app.get('/atom/:uuid/items',
+    passport.authenticate('pocket', { failureRedirect: '/login' }),
+    query_items({}, {'date_updated': -1}),
+    results_to_atom
+);
+
+app.get('/atom/:uuid/items/active',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
     query_items({'status': 'active'}, {'date_updated': -1}),
     results_to_atom

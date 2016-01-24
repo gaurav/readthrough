@@ -27,6 +27,7 @@
                     <tr>
                         <td>Article</td>
                         <td>Excerpt</td>
+                        <td>Added</td>
                         <td>Word count</td>
                     </tr>
                 </thead>
@@ -35,6 +36,7 @@
                         <tr>
                             <td><a target="_new" href="<%= item.meta_url %>"><%= item.title || "(unknown)" %></a></td>
                             <td><%= item.excerpt %></td>
+                            <td><%= item.date_added %></td>
                             <td><%= item.size %></td>
                         </tr>
                     <% }); %>
