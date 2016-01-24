@@ -209,6 +209,7 @@ function process_job_from_queue(err, job) {
                     // Abort on error.
                     if(res.statusCode != 200) {
                         console.log("Error from Pocket /get: " + response);
+                        job.fail(function() {});
                         return;
                     }
 
@@ -266,20 +267,31 @@ function process_job_from_queue(err, job) {
 }
 
 // At every 'tick()', the queue does a job and moves on.
-function tick(queue) {
-    // Start a worker to execute exactly one task.
-    queue.dequeue(process_job_from_queue);
+function tick(queue, uuid) {
+    // Don't tick more than once every five minutes.
+    var last_possible_tick = new Date(new Date().getTime() - (5 * 60 * 1000));
+    queue.collection.find({queue: uuid, enqueued: {$gt: last_possible_tick}}, function(err, tasks) {
+        if(tasks.length > 0) {
+            return;
+        }
 
-    // Remove all completed jobs.
-    queue.collection.remove({status: 'complete'});
+        console.log('tick(' + queue + ')');
 
-    // Remove all jobs over 24 hours old.
-    var yesterday = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
-    queue.collection.remove({enqueued: {$lt: yesterday}});
+        // Start a worker to execute exactly one task.
+        queue.dequeue(process_job_from_queue);
 
-    // Remove one dequeued job (hopefully the one we just dequeued).
-    queue.collection.remove({status: 'dequeued'}, {
-        justOne: true
+        // Remove all completed jobs.
+        queue.collection.remove({status: 'complete'});
+        queue.collection.remove({status: 'failed'});
+
+        // Remove all jobs over 24 hours old.
+        var yesterday = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
+        queue.collection.remove({enqueued: {$lt: yesterday}});
+
+        // Remove one dequeued job (hopefully the one we just dequeued).
+        queue.collection.remove({status: 'dequeued'}, {
+            justOne: true
+        });
     });
 }
 
@@ -288,8 +300,6 @@ app.get('/tick',
     function(req, res) {
         var queue = monqclient.queue(req.user.uuid);
         queue.collection.find({queue: req.user.uuid}, function(err, tasks) {
-            tick(queue);
-
             // If and only if the queue is empty, add a 'sync' job onto it.
             if(tasks.length == 0) {
                 queue.enqueue('sync', {
@@ -298,6 +308,8 @@ app.get('/tick',
                 }, {
                 });
             }
+
+            tick(queue, req.user.uuid);
 
             res.status(200).json({
                 error: null,
