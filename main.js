@@ -166,8 +166,6 @@ function process_job_from_queue(err, job) {
 
     // If both err and job are null, this means we're stuck with a dequeued
     // job on the queue. Let's clear the queue.
-    
-
     if(err) console.log("Error in process_job_from_queue: " + err);
     if(!job) return;
 
@@ -175,7 +173,8 @@ function process_job_from_queue(err, job) {
     var queue = monqclient.queue(job.data.queue);
 
     var accessToken = job.data.params.accessToken;
-    if(!accessToken) {
+    var userid = job.data.params.userId;
+    if(!accessToken || !userid) {
         job.cancel(function() {});
         return;
     }
@@ -185,6 +184,7 @@ function process_job_from_queue(err, job) {
             // Sync from Pocket: download the next 100 items.
             var offset = job.data.params.offset || 0;
             var items_per_sync = 100;
+
 
             console.log("Querying from " + offset + " to " + (offset + items_per_sync));
 
@@ -229,8 +229,7 @@ function process_job_from_queue(err, job) {
                                     'date_added': new Date(item.time_added),
                                     'date_updated': new Date(item.time_updated),
                                     'date_read': new Date(item.time_read),
-                                    'date_favorited': new Date(item.time_favorited),
-                                    'pocket': item
+                                    'date_favorited': new Date(item.time_favorited)
                                 },
                                 {
                                     upsert: true
@@ -247,6 +246,7 @@ function process_job_from_queue(err, job) {
                     // console.log("Keep going? " + item_count + " <=> " + items_per_sync);
                     if(item_count >= items_per_sync) {
                         queue.enqueue('sync', {
+                            userId: userid,
                             accessToken: accessToken,
                             offset: offset + items_per_sync
                         }, {});
@@ -266,6 +266,10 @@ function tick(queue) {
     // Remove all completed jobs.
     queue.collection.remove({status: 'complete'});
 
+    // Remove all jobs over 24 hours old.
+    var yesterday = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
+    queue.collection.remove({enqueued: {$lt: yesterday}});
+
     // Remove one dequeued job (hopefully the one we just dequeued).
     queue.collection.remove({status: 'dequeued'}, {
         justOne: true
@@ -282,9 +286,9 @@ app.get('/tick',
             // If and only if the queue is empty, add a 'sync' job onto it.
             if(tasks.length == 0) {
                 queue.enqueue('sync', {
+                    userId: req.user.uuid,
                     accessToken: req.user.accessToken
                 }, {
-                    delay: 1000    
                 });
             }
 
