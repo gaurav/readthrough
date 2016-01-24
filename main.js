@@ -206,6 +206,12 @@ function process_job_from_queue(err, job) {
                 });
 
                 res.on('end', function() {
+                    // Abort on error.
+                    if(res.statusCode != 200) {
+                        console.log("Error from Pocket /get: " + response);
+                        return;
+                    }
+
                     // Okay, data ready!
                     json = JSON.parse(response);
 
@@ -226,6 +232,7 @@ function process_job_from_queue(err, job) {
                                     'excerpt': item.excerpt,
                                     'size': item.word_count,
                                     'category': item.tags,
+                                    'status': (item.status == '0' ? 'active' : (item.status == '1' ? 'archived' : 'deleted')),
                                     'date_added': new Date(item.time_added),
                                     'date_updated': new Date(item.time_updated),
                                     'date_read': new Date(item.time_read),
@@ -328,15 +335,13 @@ function results_to_atom(req, res) {
     });
 }
 
-// Display items.
-app.get('/items',
-    passport.authenticate('pocket', { failureRedirect: '/login' }),
-    function(req, res, next) {
+function query_items(find_query, sort_query) {
+    return function(req, res, next) {
         var offset = parseInt(req.query.offset) || 0;
         var count = parseInt(req.query.count) || 100;
 
-        items.find({}).sort({'pocket.time_updated': -1}).skip(offset).limit(count, function(err, resulting_items) {
-            items.find({}).count(function(inner_err, total_count) {
+        items.find(find_query).sort(sort_query).skip(offset).limit(count, function(err, resulting_items) {
+            items.find(find_query).count(function(inner_err, total_count) {
                 req.title = "All items (from " + offset + " to " + (offset + count) + ")";
                 req.items = resulting_items;
                 req.offset = offset;
@@ -345,32 +350,21 @@ app.get('/items',
 
                 next();
             });
-        });
-    },
+        }); 
+    };
+}
+
+// Display items.
+app.get('/items',
+    passport.authenticate('pocket', { failureRedirect: '/login' }),
+    query_items({}, {'date_updated': -1}),
     results_to_html
 );
 
 // Display items as an Atom feed.
 app.get('/atom/:uuid/items',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
-    function(req, res, next) {
-        var offset = parseInt(req.query.offset) || 0;
-        var count = parseInt(req.query.count) || 100;
-
-        var queue = monqclient.queue(req.params.uuid);
-
-        items.find({'pocket.status':'0'}).sort({'pocket.time_updated': -1}).skip(offset).limit(count, function(err, resulting_items) {
-            items.find({'pocket.status':'0'}).count(function(inner_err, total_count) {
-                req.title = "All items (from " + offset + " to " + (offset + count) + ")";
-                req.items = resulting_items;
-                req.offset = offset;
-                req.count = count;
-                req.total_count = total_count;
-
-                next();
-            });
-        });
-    },
+    query_items({'status': 'active'}, {'date_updated': -1}),
     results_to_atom
 );
 
