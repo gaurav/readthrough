@@ -347,14 +347,14 @@ function results_to_atom(req, res) {
     });
 }
 
-function query_items(find_query, sort_query) {
+function query_items(desc, find_query, sort_query) {
     return function(req, res, next) {
         var offset = parseInt(req.query.offset) || 0;
         var count = parseInt(req.query.count) || 100;
 
         items.find(find_query).sort(sort_query).skip(offset).limit(count, function(err, resulting_items) {
             items.find(find_query).count(function(inner_err, total_count) {
-                req.title = "All items (from " + offset + " to " + (offset + count) + ")";
+                req.title = desc + " items (from " + offset + " to " + (offset + count) + ")";
                 req.items = resulting_items;
                 req.offset = offset;
                 req.count = count;
@@ -369,20 +369,20 @@ function query_items(find_query, sort_query) {
 // Display items.
 app.get('/items',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
-    query_items({}, {'date_updated': -1}),
+    query_items('All', {}, {'date_updated': -1}),
     results_to_html
 );
 
 // Display items as an Atom feed.
 app.get('/atom/:uuid/items',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
-    query_items({}, {'date_updated': -1}),
+    query_items('All', {}, {'date_updated': -1}),
     results_to_atom
 );
 
 app.get('/atom/:uuid/items/active',
     passport.authenticate('pocket', { failureRedirect: '/login' }),
-    query_items({'status': 'active'}, {'date_updated': -1}),
+    query_items('All active', {'status': 'active'}, {'date_updated': -1}),
     results_to_atom
 );
 
